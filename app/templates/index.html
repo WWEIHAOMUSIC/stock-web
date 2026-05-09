@@ -3,1023 +3,428 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>📊 智能股票查询系统</title>
+  <title>📊 股票深度分析系统</title>
   <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
   <style>
-    :root {
-      --bg: #0f1117;
-      --card: #1a1d27;
-      --card-hover: #22263a;
-      --border: #2a2e3f;
-      --text: #e2e4ea;
-      --text-dim: #8b8fa8;
-      --green: #22c55e;
-      --red: #ef4444;
-      --blue: #3b82f6;
-      --yellow: #eab308;
-      --orange: #f97316;
-      --purple: #a855f7;
-    }
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      min-height: 100vh;
-    }
+    :root{--bg:#0a0c12;--card:#12151f;--card2:#181c2a;--border:#252a3a;--text:#e4e6ec;--dim:#6b7194;--green:#22c55e;--red:#ef4444;--blue:#3b82f6;--yellow:#eab308;--orange:#f97316;--purple:#a855f7;--cyan:#06b6d4}
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
 
-    /* 顶部导航 */
-    .navbar {
-      background: var(--card);
-      border-bottom: 1px solid var(--border);
-      padding: 12px 24px;
-      display: flex;
-      align-items: center;
-      gap: 16px;
-      position: sticky;
-      top: 0;
-      z-index: 100;
-    }
-    .navbar-logo {
-      font-size: 18px;
-      font-weight: 700;
-      color: var(--orange);
-      white-space: nowrap;
-    }
-    .search-box {
-      flex: 1;
-      max-width: 480px;
-      position: relative;
-    }
-    .search-box input {
-      width: 100%;
-      padding: 8px 36px 8px 14px;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      background: var(--bg);
-      color: var(--text);
-      font-size: 14px;
-      outline: none;
-    }
-    .search-box input:focus { border-color: var(--blue); }
-    .search-icon {
-      position: absolute;
-      right: 10px;
-      top: 50%;
-      transform: translateY(-50%);
-      color: var(--text-dim);
-      cursor: pointer;
-    }
-    .search-results {
-      position: absolute;
-      top: 100%;
-      left: 0; right: 0;
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      margin-top: 4px;
-      max-height: 240px;
-      overflow-y: auto;
-      display: none;
-      z-index: 200;
-    }
-    .search-results.active { display: block; }
-    .search-item {
-      padding: 8px 14px;
-      cursor: pointer;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      border-bottom: 1px solid var(--border);
-    }
-    .search-item:last-child { border-bottom: none; }
-    .search-item:hover { background: var(--card-hover); }
-    .search-item .code { color: var(--text-dim); font-size: 12px; }
-    .search-item .name { font-size: 14px; }
-    .search-item .pct {
-      font-size: 13px;
-      font-weight: 600;
-    }
-    .search-item .pct.up { color: var(--red); }
-    .search-item .pct.down { color: var(--green); }
+    /* 导航 */
+    .nav{background:var(--card);border-bottom:1px solid var(--border);padding:10px 20px;display:flex;align-items:center;gap:14px;position:sticky;top:0;z-index:100}
+    .logo{font-size:16px;font-weight:800;color:var(--orange);white-space:nowrap;letter-spacing:-0.5px}
+    .search{flex:1;max-width:420px;position:relative}
+    .search input{width:100%;padding:7px 34px 7px 12px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text);font-size:13px;outline:none}
+    .search input:focus{border-color:var(--blue)}
+    .search-icon{position:absolute;right:10px;top:50%;transform:translateY(-50%);color:var(--dim);cursor:pointer;font-size:14px}
+    .sresults{position:absolute;top:100%;left:0;right:0;background:var(--card);border:1px solid var(--border);border-radius:8px;margin-top:4px;max-height:220px;overflow-y:auto;display:none;z-index:200}
+    .sresults.show{display:block}
+    .sitem{padding:7px 12px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);font-size:13px}
+    .sitem:hover{background:var(--card2)}
+    .sitem .n{font-weight:500}.sitem .c{color:var(--dim);font-size:11px;margin-left:6px}
+    .sitem .p{font-weight:700;font-size:12px}
+    .p.up{color:var(--red)}.p.dn{color:var(--green)}
 
-    .nav-tabs {
-      display: flex;
-      gap: 4px;
-    }
-    .nav-tab {
-      padding: 6px 14px;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 13px;
-      color: var(--text-dim);
-      transition: all 0.2s;
-      border: none;
-      background: transparent;
-    }
-    .nav-tab:hover { color: var(--text); background: var(--card-hover); }
-    .nav-tab.active {
-      background: var(--blue);
-      color: white;
-      font-weight: 600;
-    }
+    /* 容器 */
+    .wrap{max-width:1360px;margin:0 auto;padding:14px}
 
-    /* 主容器 */
-    .container {
-      max-width: 1400px;
-      margin: 0 auto;
-      padding: 20px 16px;
-    }
+    /* 股票头 */
+    .hdr{display:none;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px 18px;margin-bottom:14px}
+    .hdr.vis{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+    .hdr .nm{font-size:20px;font-weight:800}.hdr .cd{font-size:12px;color:var(--dim);background:var(--bg);padding:2px 8px;border-radius:4px}
+    .hdr .pr{font-size:28px;font-weight:800}
+    .hdr .pr.up{color:var(--red)}.hdr .pr.dn{color:var(--green)}
+    .hdr .ch{font-size:14px;font-weight:600}
+    .hdr .bd{padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700}
+    .bd.up{background:rgba(239,68,68,0.15);color:var(--red)}.bd.dn{background:rgba(34,197,94,0.15);color:var(--green)}
+    .hdr .meta{display:flex;gap:14px;font-size:12px;color:var(--dim);flex-wrap:wrap}
 
-    /* 股票标题 */
-    .stock-header {
-      display: none;
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 16px 20px;
-      margin-bottom: 16px;
-    }
-    .stock-header.visible { display: block; }
-    .stock-title {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin-bottom: 12px;
-    }
-    .stock-name {
-      font-size: 22px;
-      font-weight: 700;
-    }
-    .stock-code {
-      font-size: 13px;
-      color: var(--text-dim);
-      background: var(--bg);
-      padding: 2px 8px;
-      border-radius: 4px;
-    }
-    .stock-price-block {
-      display: flex;
-      gap: 20px;
-      flex-wrap: wrap;
-    }
-    .stock-price {
-      font-size: 32px;
-      font-weight: 700;
-    }
-    .stock-price.up { color: var(--red); }
-    .stock-price.down { color: var(--green); }
-    .stock-change {
-      font-size: 16px;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      margin-top: 6px;
-    }
-    .badge {
-      padding: 2px 8px;
-      border-radius: 4px;
-      font-size: 12px;
-      font-weight: 600;
-    }
-    .badge.up { background: rgba(239,68,68,0.15); color: var(--red); }
-    .badge.down { background: rgba(34,197,94,0.15); color: var(--green); }
+    /* 五维评分卡 */
+    .dims{display:none;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:14px}
+    .dims.vis{display:grid}
+    @media(max-width:900px){.dims.vis{grid-template-columns:repeat(3,1fr)}}
+    @media(max-width:600px){.dims.vis{grid-template-columns:1fr 1fr}}
+    .dcard{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center;cursor:pointer;transition:border-color .2s}
+    .dcard:hover{border-color:var(--blue)}
+    .dcard .dlabel{font-size:12px;color:var(--dim);font-weight:600;margin-bottom:6px}
+    .dcard .dscore{font-size:28px;font-weight:800;line-height:1.1}
+    .dcard .dsig{font-size:12px;font-weight:700;margin-top:4px;padding:2px 10px;border-radius:20px;display:inline-block}
+    .dsig.bull{background:rgba(34,197,94,0.15);color:var(--green)}
+    .dsig.bear{background:rgba(239,68,68,0.15);color:var(--red)}
+    .dsig.neut{background:rgba(234,179,8,0.15);color:var(--yellow)}
+    .dcard .dicon{font-size:18px;margin-bottom:4px}
 
-    /* 标签页内容 */
-    .tab-content { display: none; }
-    .tab-content.active { display: block; }
+    /* 雷达图+核心矛盾 */
+    .radar-contr{display:none;grid-template-columns:340px 1fr;gap:12px;margin-bottom:14px}
+    .radar-contr.vis{display:grid}
+    @media(max-width:900px){.radar-contr.vis{grid-template-columns:1fr}}
+    .rcard{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px}
+    .rcard .rtitle{font-size:13px;font-weight:700;color:var(--dim);margin-bottom:10px;display:flex;align-items:center;gap:6px}
+    .rcard .rtitle .dot{width:8px;height:8px;border-radius:50%;display:inline-block}
 
-    /* 网格布局 */
-    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-    .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
-    .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+    /* 核心矛盾 */
+    .vs-box{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    @media(max-width:600px){.vs-box{grid-template-columns:1fr}}
+    .vs-side{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px}
+    .vs-side.bull{border-color:rgba(34,197,94,0.3)}.vs-side.bear{border-color:rgba(239,68,68,0.3)}
+    .vs-head{font-size:13px;font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+    .vs-head.bull{color:var(--green)}.vs-head.bear{color:var(--red)}
+    .vs-item{font-size:12px;color:var(--text);padding:4px 0 4px 14px;border-left:2px solid var(--border);margin-bottom:4px;line-height:1.5}
+    .vs-side.bull .vs-item{border-color:rgba(34,197,94,0.4)}
+    .vs-side.bear .vs-item{border-color:rgba(239,68,68,0.4)}
 
-    @media (max-width: 900px) {
-      .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
-    }
+    .contr-text{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px;margin-top:10px;font-size:13px;line-height:1.6}
+    .contr-label{font-size:11px;font-weight:700;color:var(--cyan);margin-bottom:6px}
 
-    /* 卡片 */
-    .card {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 16px;
-    }
-    .card-title {
-      font-size: 13px;
-      font-weight: 700;
-      color: var(--text-dim);
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      margin-bottom: 12px;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-    .card-title .dot {
-      width: 8px; height: 8px;
-      border-radius: 50%;
-      background: var(--blue);
-    }
+    /* 结论卡 */
+    .verdicts{display:none;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
+    .verdicts.vis{display:grid}
+    @media(max-width:700px){.verdicts.vis{grid-template-columns:1fr}}
+    .vcard{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px}
+    .vcard .vlabel{font-size:11px;color:var(--dim);font-weight:700;text-transform:uppercase;letter-spacing:0.5px}
+    .vcard .vdir{font-size:22px;font-weight:800;margin:6px 0}
+    .vcard .vtime{font-size:11px;color:var(--dim);margin-bottom:6px}
+    .vcard .vlogic{font-size:12px;line-height:1.5;color:var(--text)}
 
-    /* 指标格子 */
-    .metric-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
-      gap: 8px;
-    }
-    .metric-box {
-      background: var(--bg);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 10px;
-      text-align: center;
-    }
-    .metric-box.green { border-color: rgba(34,197,94,0.3); background: rgba(34,197,94,0.05); }
-    .metric-box.red { border-color: rgba(239,68,68,0.3); background: rgba(239,68,68,0.05); }
-    .metric-box.yellow { border-color: rgba(234,179,8,0.3); background: rgba(234,179,8,0.05); }
-    .metric-value {
-      font-size: 16px;
-      font-weight: 700;
-      color: var(--text);
-    }
-    .metric-label {
-      font-size: 10px;
-      color: var(--text-dim);
-      margin-top: 2px;
-    }
-    .metric-good .metric-value { color: var(--green); }
-    .metric-bad .metric-value { color: var(--red); }
+    /* 详细分析 */
+    .detail-section{display:none;margin-bottom:14px}
+    .detail-section.vis{display:block}
+    .dtabs{display:flex;gap:4px;margin-bottom:10px;flex-wrap:wrap}
+    .dtab{padding:5px 12px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;color:var(--dim);background:transparent;border:1px solid var(--border);transition:all .2s}
+    .dtab:hover{color:var(--text);background:var(--card2)}
+    .dtab.active{background:var(--blue);color:#fff;border-color:var(--blue)}
+    .dpanel{display:none;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px}
+    .dpanel.active{display:block}
 
-    /* 图表 */
-    .chart-box {
-      width: 100%;
-      height: 320px;
-    }
-    .chart-sm {
-      height: 200px;
-    }
+    .detail-row{display:flex;align-items:flex-start;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);font-size:13px}
+    .detail-row:last-child{border-bottom:none}
+    .detail-row .tag{padding:1px 7px;border-radius:10px;font-size:11px;font-weight:700;white-space:nowrap;min-width:36px;text-align:center}
+    .tag.bull{background:rgba(34,197,94,0.15);color:var(--green)}
+    .tag.bear{background:rgba(239,68,68,0.15);color:var(--red)}
+    .tag.neutral{background:rgba(234,179,8,0.15);color:var(--yellow)}
+    .tag.info{background:rgba(59,130,246,0.15);color:var(--blue)}
 
-    /* 资金条 */
-    .fund-bar {
-      margin: 6px 0;
-    }
-    .fund-label {
-      display: flex;
-      justify-content: space-between;
-      font-size: 12px;
-      margin-bottom: 3px;
-    }
-    .fund-track {
-      height: 6px;
-      background: var(--border);
-      border-radius: 3px;
-      overflow: hidden;
-    }
-    .fund-fill {
-      height: 100%;
-      border-radius: 3px;
-      transition: width 0.6s ease;
-    }
-    .fund-fill.up { background: var(--green); }
-    .fund-fill.down { background: var(--red); }
+    /* K线图 */
+    .kline-box{width:100%;height:380px}
 
-    /* 板块列表 */
-    .sector-item {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 8px 0;
-      border-bottom: 1px solid var(--border);
-    }
-    .sector-item:last-child { border-bottom: none; }
-    .sector-name { font-size: 14px; }
-    .sector-lead { font-size: 11px; color: var(--text-dim); }
-    .sector-pct { font-weight: 700; font-size: 14px; }
-    .sector-pct.up { color: var(--red); }
-    .sector-pct.down { color: var(--green); }
+    /* 新闻列表 */
+    .news-item{padding:8px 0;border-bottom:1px solid var(--border);font-size:12px}
+    .news-item:last-child{border-bottom:none}
+    .news-item .nt{font-weight:600;margin-bottom:2px}
+    .news-item .nm{color:var(--dim);font-size:11px}
 
-    /* AI 总结 */
-    .ai-summary {
-      background: linear-gradient(135deg, rgba(59,130,246,0.1), rgba(168,85,247,0.1));
-      border: 1px solid rgba(59,130,246,0.3);
-      border-radius: 12px;
-      padding: 20px;
-    }
-    .ai-summary-title {
-      font-size: 14px;
-      font-weight: 700;
-      color: var(--blue);
-      margin-bottom: 12px;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-    .ai-tag {
-      display: inline-block;
-      padding: 3px 10px;
-      border-radius: 20px;
-      font-size: 12px;
-      font-weight: 700;
-      margin: 2px;
-    }
-    .ai-tag.bull { background: rgba(34,197,94,0.2); color: var(--green); }
-    .ai-tag.bear { background: rgba(239,68,68,0.2); color: var(--red); }
-    .ai-tag.neutral { background: rgba(234,179,8,0.2); color: var(--yellow); }
-    .ai-tag.info { background: rgba(59,130,246,0.2); color: var(--blue); }
+    /* 空状态 */
+    .empty{text-align:center;padding:60px 20px;color:var(--dim)}
+    .empty .icon{font-size:48px;margin-bottom:12px}
+    .empty .txt{font-size:14px}
 
-    /* 等待状态 */
-    .loading {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      padding: 40px;
-      color: var(--text-dim);
-    }
-    .spinner {
-      width: 24px; height: 24px;
-      border: 2px solid var(--border);
-      border-top-color: var(--blue);
-      border-radius: 50%;
-      animation: spin 0.8s linear infinite;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
+    /* 免责 */
+    .disclaimer{text-align:center;color:var(--dim);font-size:11px;padding:16px;margin-top:10px}
 
-    /* 热门板块标签 */
-    .hot-tabs {
-      display: flex;
-      gap: 6px;
-      margin-bottom: 12px;
-      flex-wrap: wrap;
-    }
-    .hot-tab {
-      padding: 4px 12px;
-      border-radius: 20px;
-      font-size: 12px;
-      cursor: pointer;
-      border: 1px solid var(--border);
-      color: var(--text-dim);
-      background: transparent;
-      transition: all 0.2s;
-    }
-    .hot-tab.active {
-      background: var(--blue);
-      color: white;
-      border-color: var(--blue);
-    }
-
-    /* 免责声明 */
-    .disclaimer {
-      text-align: center;
-      color: var(--text-dim);
-      font-size: 11px;
-      padding: 20px;
-      margin-top: 20px;
-    }
-
-    /* 看板 */
-    .board-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-      gap: 8px;
-    }
-    .board-item {
-      background: var(--bg);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 10px 12px;
-    }
-    .board-item .label { font-size: 10px; color: var(--text-dim); }
-    .board-item .value { font-size: 15px; font-weight: 700; margin-top: 2px; }
-
-    /* 响应式 */
-    @media (max-width: 768px) {
-      .nav-tabs { display: none; }
-      .grid-2 { grid-template-columns: 1fr; }
-    }
+    /* 加载 */
+    .loading{display:flex;align-items:center;justify-content:center;gap:8px;padding:40px;color:var(--dim)}
+    .spinner{width:20px;height:20px;border:2px solid var(--border);border-top-color:var(--blue);border-radius:50%;animation:spin .8s linear infinite}
+    @keyframes spin{to{transform:rotate(360deg)}}
   </style>
 </head>
 <body>
 
-<!-- 导航栏 -->
-<nav class="navbar">
-  <div class="navbar-logo">📊 智能股票</div>
-  <div class="search-box">
-    <input type="text" id="searchInput" placeholder="输入代码或名称，如 002073 / 软控 / 贵州茅台" autocomplete="off">
+<nav class="nav">
+  <div class="logo">📊 深度分析</div>
+  <div class="search">
+    <input type="text" id="si" placeholder="输入代码或名称，如 002073 / 软控 / 贵州茅台" autocomplete="off">
     <span class="search-icon" onclick="doSearch()">🔍</span>
-    <div class="search-results" id="searchResults"></div>
-  </div>
-  <div class="nav-tabs">
-    <button class="nav-tab active" onclick="switchTab('overview')">行情</button>
-    <button class="nav-tab" onclick="switchTab('technical')">技术</button>
-    <button class="nav-tab" onclick="switchTab('funds')">资金</button>
-    <button class="nav-tab" onclick="switchTab('sectors')">板块</button>
+    <div class="sresults" id="sr"></div>
   </div>
 </nav>
 
-<div class="container">
-  <!-- 股票标题栏 -->
-  <div class="stock-header" id="stockHeader">
-    <div class="stock-title">
-      <span class="stock-name" id="stockName">--</span>
-      <span class="stock-code" id="stockCode">------</span>
-      <span class="badge" id="marketBadge">--</span>
+<div class="wrap">
+  <!-- 股票头 -->
+  <div class="hdr" id="hdr">
+    <span class="nm" id="hNm">—</span>
+    <span class="cd" id="hCd">------</span>
+    <span class="pr" id="hPr">—</span>
+    <span class="ch" id="hCh">—</span>
+    <span class="bd" id="hBd">—</span>
+    <div class="meta" id="hMeta"></div>
+  </div>
+
+  <!-- 空状态 -->
+  <div class="empty" id="emptyState">
+    <div class="icon">📈</div>
+    <div class="txt">搜索股票代码或名称，开始五维深度分析</div>
+  </div>
+
+  <!-- 五维评分卡 -->
+  <div class="dims" id="dims">
+    <div class="dcard" onclick="showDetail('tech')">
+      <div class="dicon">📐</div>
+      <div class="dlabel">技术面</div>
+      <div class="dscore" id="sTech">—</div>
+      <div class="dsig" id="sigTech">—</div>
     </div>
-    <div class="stock-price-block">
-      <div>
-        <div class="stock-price" id="stockPrice">--</div>
-        <div class="stock-change" id="stockChange">--</div>
+    <div class="dcard" onclick="showDetail('capital')">
+      <div class="dicon">💰</div>
+      <div class="dlabel">资金面</div>
+      <div class="dscore" id="sCap">—</div>
+      <div class="dsig" id="sigCap">—</div>
+    </div>
+    <div class="dcard" onclick="showDetail('msg')">
+      <div class="dicon">📰</div>
+      <div class="dlabel">消息面</div>
+      <div class="dscore" id="sMsg">—</div>
+      <div class="dsig" id="sigMsg">—</div>
+    </div>
+    <div class="dcard" onclick="showDetail('policy')">
+      <div class="dicon">🏛️</div>
+      <div class="dlabel">政策面</div>
+      <div class="dscore" id="sPol">—</div>
+      <div class="dsig" id="sigPol">—</div>
+    </div>
+    <div class="dcard" onclick="showDetail('sent')">
+      <div class="dicon">🧠</div>
+      <div class="dlabel">情绪面</div>
+      <div class="dscore" id="sSent">—</div>
+      <div class="dsig" id="sigSent">—</div>
+    </div>
+  </div>
+
+  <!-- 雷达图+核心矛盾 -->
+  <div class="radar-contr" id="radarContr">
+    <div class="rcard">
+      <div class="rtitle"><span class="dot" style="background:var(--cyan)"></span>五维雷达</div>
+      <div id="radarChart" style="width:100%;height:300px"></div>
+    </div>
+    <div class="rcard">
+      <div class="rtitle"><span class="dot" style="background:var(--orange)"></span>核心矛盾提炼</div>
+      <div class="vs-box">
+        <div class="vs-side bull">
+          <div class="vs-head bull">🟢 多头观点</div>
+          <div id="bullPoints"></div>
+        </div>
+        <div class="vs-side bear">
+          <div class="vs-head bear">🔴 空头观点</div>
+          <div id="bearPoints"></div>
+        </div>
+      </div>
+      <div class="contr-text">
+        <div class="contr-label">⚡ 核心矛盾</div>
+        <div id="contrText">—</div>
       </div>
     </div>
   </div>
 
-  <!-- ========== 行情总览 ========== -->
-  <div class="tab-content active" id="tab-overview">
-    <div id="overviewContent">
-      <div class="loading"><div class="spinner"></div>请先搜索股票代码</div>
+  <!-- 短期/中期结论 -->
+  <div class="verdicts" id="verdicts">
+    <div class="vcard">
+      <div class="vlabel">📅 短期结论 (1-3天)</div>
+      <div class="vdir" id="shortDir">—</div>
+      <div class="vtime" id="shortTime"></div>
+      <div class="vlogic" id="shortLogic">—</div>
+    </div>
+    <div class="vcard">
+      <div class="vlabel">📆 中期结论 (1-4周)</div>
+      <div class="vdir" id="midDir">—</div>
+      <div class="vtime" id="midTime"></div>
+      <div class="vlogic" id="midLogic">—</div>
     </div>
   </div>
 
-  <!-- ========== 技术分析 ========== -->
-  <div class="tab-content" id="tab-technical">
-    <div id="technicalContent">
-      <div class="loading"><div class="spinner"></div>请先搜索股票代码</div>
+  <!-- 详细分析 -->
+  <div class="detail-section" id="detailSec">
+    <div class="dtabs">
+      <button class="dtab active" onclick="showDetail('tech')">📐 技术面</button>
+      <button class="dtab" onclick="showDetail('capital')">💰 资金面</button>
+      <button class="dtab" onclick="showDetail('msg')">📰 消息面</button>
+      <button class="dtab" onclick="showDetail('policy')">🏛️ 政策面</button>
+      <button class="dtab" onclick="showDetail('sent')">🧠 情绪面</button>
+      <button class="dtab" onclick="showDetail('kline')">📉 K线图</button>
     </div>
+    <div class="dpanel active" id="dp-tech"><div id="detTech"></div></div>
+    <div class="dpanel" id="dp-capital"><div id="detCap"></div></div>
+    <div class="dpanel" id="dp-msg"><div id="detMsg"></div></div>
+    <div class="dpanel" id="dp-policy"><div id="detPol"></div></div>
+    <div class="dpanel" id="dp-sent"><div id="detSent"></div></div>
+    <div class="dpanel" id="dp-kline"><div id="klineChart" class="kline-box"></div></div>
   </div>
 
-  <!-- ========== 资金流向 ========== -->
-  <div class="tab-content" id="tab-funds">
-    <div id="fundsContent">
-      <div class="loading"><div class="spinner"></div>请先搜索股票代码</div>
-    </div>
-  </div>
-
-  <!-- ========== 热门板块 ========== -->
-  <div class="tab-content" id="tab-sectors">
-    <div class="grid-2">
-      <div class="card">
-        <div class="card-title"><span class="dot" style="background:var(--orange)"></span>行业板块 TOP10</div>
-        <div id="industryList"></div>
-      </div>
-      <div class="card">
-        <div class="card-title"><span class="dot" style="background:var(--purple)"></span>概念板块 TOP10</div>
-        <div id="conceptList"></div>
-      </div>
-    </div>
-  </div>
-
-  <div class="disclaimer">
-    ⚠️ 本系统数据仅供参考，不构成任何投资建议。股市有风险，决策需谨慎。
-  </div>
+  <div class="disclaimer">⚠️ 本系统数据仅供参考，不构成任何投资建议。股市有风险，决策需谨慎。</div>
 </div>
 
 <script>
-// ============================================================
-// 全局状态
-// ============================================================
-let currentCode = '';
-let currentName = '';
-let techChart = null;
-let klineChart = null;
+let curCode='', curName='', radarChart=null, kChart=null, analysisData=null;
 
-// ============================================================
-// 搜索
-// ============================================================
-const searchInput = document.getElementById('searchInput');
-const searchResults = document.getElementById('searchResults');
+// ── 搜索 ──
+const si=document.getElementById('si'), sr=document.getElementById('sr');
+si.addEventListener('input',debounce(async e=>{
+  const q=e.target.value.trim(); if(!q){sr.classList.remove('show');return}
+  try{
+    const r=await fetch(`/api/search?q=${encodeURIComponent(q)}`);
+    const d=await r.json();
+    if(!d.length){sr.classList.remove('show');return}
+    sr.innerHTML=d.map(s=>`<div class="sitem" onclick="pick('${s['代码']}','${s['名称']}')"><span><span class="n">${s['名称']}</span><span class="c">${s['代码']}</span></span><span class="p ${s['涨跌幅']>=0?'up':'dn'}">${s['涨跌幅']>=0?'+':''}${(s['涨跌幅']||0).toFixed(2)}%</span></div>`).join('');
+    sr.classList.add('show');
+  }catch(e){console.error(e)}
+},300));
+function debounce(f,d){let t;return(...a)=>{clearTimeout(t);t=setTimeout(()=>f(...a),d)}}
+function doSearch(){const q=si.value.trim();if(q)pick(q.replace(/\D/g,'').slice(0,6),q)}
 
-searchInput.addEventListener('input', debounce(async (e) => {
-  const q = e.target.value.trim();
-  if (q.length < 1) { searchResults.classList.remove('active'); return; }
-  try {
-    const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`);
-    const data = await res.json();
-    if (!data.length) { searchResults.classList.remove('active'); return; }
-    searchResults.innerHTML = data.map(s => `
-      <div class="search-item" onclick="selectStock('${s['代码']}', '${s['名称']}')">
-        <div>
-          <div class="name">${s['名称']}</div>
-          <div class="code">${s['代码']}</div>
-        </div>
-        <div class="pct ${s['涨跌幅'] >= 0 ? 'up' : 'down'}">
-          ${s['涨跌幅'] >= 0 ? '+' : ''}${parseFloat(s['涨跌幅'] || 0).toFixed(2)}%
-        </div>
-      </div>
-    `).join('');
-    searchResults.classList.add('active');
-  } catch(e) { console.error(e); }
-}, 300));
-
-function debounce(fn, delay) {
-  let t;
-  return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), delay); };
+async function pick(code,name){
+  code=code.replace(/[^0-9]/g,'').slice(0,6);if(!code)return;
+  sr.classList.remove('show');curCode=code;curName=name;
+  si.value=`${name} (${code})`;
+  document.getElementById('emptyState').style.display='none';
+  await loadAnalysis();
 }
 
-function doSearch() {
-  const q = searchInput.value.trim();
-  if (!q) return;
-  selectStock(q, q);
-}
+// ── 主分析 ──
+async function loadAnalysis(){
+  show('dims','radarContr','verdicts','detailSec');
+  document.getElementById('hdr').classList.add('vis');
+  // 显示加载
+  document.querySelectorAll('.dscore').forEach(e=>e.textContent='···');
 
-async function selectStock(code, name) {
-  code = code.trim().replace(/[^0-9]/g, '').slice(0, 6);
-  if (!code) return;
-  searchResults.classList.remove('active');
-  currentCode = code;
-  currentName = name;
-  searchInput.value = `${name} (${code})`;
-  document.getElementById('stockHeader').classList.add('visible');
-  await Promise.all([loadOverview(), loadTechnical(), loadFunds()]);
-}
-
-// ============================================================
-// 标签切换
-// ============================================================
-function switchTab(name) {
-  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
-  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-  document.querySelector(`.nav-tab[onclick*="${name}"]`)?.classList.add('active');
-  document.getElementById(`tab-${name}`)?.classList.add('active');
-  // 触发 resize 让图表重绘
-  if (name === 'technical' && techChart) setTimeout(() => techChart.resize(), 50);
-  if (name === 'sectors') loadSectors();
-}
-
-// ============================================================
-// 行情总览
-// ============================================================
-async function loadOverview() {
-  const el = document.getElementById('overviewContent');
-  el.innerHTML = '<div class="loading"><div class="spinner"></div>加载中...</div>';
-
-  const [quote, tech] = await Promise.all([
-    fetch(`/api/quote/${currentCode}`).then(r => r.json()),
-    fetch(`/api/technical/${currentCode}`).then(r => r.json()),
-  ]);
-
-  document.getElementById('stockName').textContent = quote['名称'] || currentName;
-  document.getElementById('stockCode').textContent = currentCode;
-  const price = parseFloat(quote['最新价'] || 0);
-  const pct = parseFloat(quote['涨跌幅'] || 0);
-  const isUp = pct >= 0;
-
-  document.getElementById('stockPrice').textContent = price ? `¥${price.toFixed(2)}` : '--';
-  document.getElementById('stockPrice').className = `stock-price ${isUp ? 'up' : 'down'}`;
-  document.getElementById('stockChange').innerHTML = `
-    ${isUp ? '▲' : '▼'} ${Math.abs(pct).toFixed(2)}%  ${(parseFloat(quote['涨跌额']) || 0) >= 0 ? '+' : ''}${(parseFloat(quote['涨跌额']) || 0).toFixed(2)}
-  `;
-  document.getElementById('stockChange').style.color = isUp ? 'var(--red)' : 'var(--green)';
-  document.getElementById('marketBadge').textContent = isUp ? '涨' : '跌';
-  document.getElementById('marketBadge').className = `badge ${isUp ? 'up' : 'down'}`;
-
-  const rsiSignal = tech['RSI信号'] || '';
-  const rsiColor = rsiSignal === '超买' ? 'red' : rsiSignal === '超卖' ? 'green' : '';
-  const maColor = tech['均线排列'] === '多头排列' ? 'green' : tech['均线排列'] === '空头排列' ? 'red' : '';
-  const macdColor = tech['MACD信号'] === '金叉-买方主导' ? 'green' : tech['MACD信号'] === '死叉-卖方主导' ? 'red' : '';
-
-  el.innerHTML = `
-    <div class="grid-2" style="margin-bottom:12px">
-      <div class="card">
-        <div class="card-title"><span class="dot"></span>实时行情</div>
-        <div class="board-grid">
-          <div class="board-item"><div class="label">今开</div><div class="value">${quote['今开'] || '--'}</div></div>
-          <div class="board-item"><div class="label">最高</div><div class="value" style="color:var(--red)">${quote['最高'] || '--'}</div></div>
-          <div class="board-item"><div class="label">最低</div><div class="value" style="color:var(--green)">${quote['最低'] || '--'}</div></div>
-          <div class="board-item"><div class="label">昨收</div><div class="value">${quote['昨收'] || '--'}</div></div>
-          <div class="board-item"><div class="label">成交量</div><div class="value">${quote['成交量'] ? (quote['成交量']/10000).toFixed(1)+'万' : '--'}</div></div>
-          <div class="board-item"><div class="label">成交额</div><div class="value">${quote['成交额'] ? (quote['成交额']/100000000).toFixed(2)+'亿' : '--'}</div></div>
-          <div class="board-item"><div class="label">换手率</div><div class="value">${quote['换手率'] ? quote['换手率'].toFixed(2)+'%' : '--'}</div></div>
-          <div class="board-item"><div class="label">量比</div><div class="value">${quote['量比'] || '--'}</div></div>
-          <div class="board-item"><div class="label">委比</div><div class="value">${quote['委比'] ? quote['委比'].toFixed(2)+'%' : '--'}</div></div>
-          <div class="board-item"><div class="label">内盘/外盘</div><div class="value">${quote['内盘']||'--'} / ${quote['外盘']||'--'}</div></div>
-          <div class="board-item"><div class="label">总市值</div><div class="value">${quote['总市值'] ? (quote['总市值']/100000000).toFixed(2)+'亿' : '--'}</div></div>
-          <div class="board-item"><div class="label">流通市值</div><div class="value">${quote['流通市值'] ? (quote['流通市值']/100000000).toFixed(2)+'亿' : '--'}</div></div>
-        </div>
-      </div>
-      <div class="card">
-        <div class="card-title"><span class="dot" style="background:var(--green)"></span>技术面快照</div>
-        <div class="metric-grid">
-          <div class="metric-box ${maColor ? 'green' : ''}">
-            <div class="metric-value">${tech['均线排列'] || '--'}</div>
-            <div class="metric-label">均线排列</div>
-          </div>
-          <div class="metric-box">
-            <div class="metric-value">${tech['EMA5'] || '--'}</div>
-            <div class="metric-label">EMA5</div>
-          </div>
-          <div class="metric-box">
-            <div class="metric-value">${tech['EMA10'] || '--'}</div>
-            <div class="metric-label">EMA10</div>
-          </div>
-          <div class="metric-box">
-            <div class="metric-value">${tech['EMA20'] || '--'}</div>
-            <div class="metric-label">EMA20</div>
-          </div>
-          <div class="metric-box ${macdColor ? 'green' : ''}">
-            <div class="metric-value">${tech['MACD信号'] || '--'}</div>
-            <div class="metric-label">MACD</div>
-          </div>
-          <div class="metric-box">
-            <div class="metric-value">${tech['MACD_DIF']?.toFixed(4) || '--'}</div>
-            <div class="metric-label">DIF</div>
-          </div>
-          <div class="metric-box ${rsiColor ? (rsiColor === 'red' ? 'red' : 'green') : ''}">
-            <div class="metric-value">${tech['RSI14'] || '--'}</div>
-            <div class="metric-label">RSI14</div>
-          </div>
-          <div class="metric-box">
-            <div class="metric-value">${tech['RSI信号'] || '--'}</div>
-            <div class="metric-label">RSI信号</div>
-          </div>
-          <div class="metric-box">
-            <div class="metric-value">${tech['布林信号'] || '--'}</div>
-            <div class="metric-label">布林带</div>
-          </div>
-          <div class="metric-box">
-            <div class="metric-value">${tech['年化波动率'] ? tech['年化波动率']+'%' : '--'}</div>
-            <div class="metric-label">年化波动率</div>
-          </div>
-          <div class="metric-box">
-            <div class="metric-value">${tech['5日涨幅'] ? tech['5日涨幅']+'%' : '--'}</div>
-            <div class="metric-label">5日涨幅</div>
-          </div>
-          <div class="metric-box">
-            <div class="metric-value">${tech['10日涨幅'] ? tech['10日涨幅']+'%' : '--'}</div>
-            <div class="metric-label">10日涨幅</div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- AI 总结 -->
-    <div class="ai-summary" style="margin-top:12px">
-      <div class="ai-summary-title">🧠 AI 综合研判</div>
-      ${generateAISummary(quote, tech)}
-    </div>
-  `;
-}
-
-// ============================================================
-// 技术分析
-// ============================================================
-async function loadTechnical() {
-  const el = document.getElementById('technicalContent');
-  el.innerHTML = '<div class="loading"><div class="spinner"></div>加载K线和指标...</div>';
-
-  const tech = await fetch(`/api/technical/${currentCode}`).then(r => r.json());
-  const kline = tech['K线历史'] || [];
-
-  // K线图
-  let klineHtml = '';
-  if (kline.length > 0) {
-    klineHtml = `
-      <div class="card" style="margin-bottom:12px">
-        <div class="card-title"><span class="dot" style="background:var(--orange)"></span>K线走势（近${kline.length}日）</div>
-        <div id="klineChart" class="chart-box"></div>
-      </div>
-    `;
+  try{
+    const r=await fetch(`/api/analysis/${curCode}`);
+    analysisData=await r.json();
+    renderAll(analysisData);
+  }catch(e){
+    console.error(e);
   }
+}
 
-  // 布林带 + MACD
-  const indicatorHtml = `
-    <div class="grid-2">
-      <div class="card">
-        <div class="card-title"><span class="dot" style="background:var(--purple)"></span>布林带</div>
-        <div class="metric-grid" style="margin-bottom:12px">
-          <div class="metric-box">
-            <div class="metric-value">${tech['布林上轨'] || '--'}</div>
-            <div class="metric-label">上轨</div>
-          </div>
-          <div class="metric-box">
-            <div class="metric-value">${tech['布林中轨'] || '--'}</div>
-            <div class="metric-label">中轨(MA20)</div>
-          </div>
-          <div class="metric-box">
-            <div class="metric-value">${tech['布林下轨'] || '--'}</div>
-            <div class="metric-label">下轨</div>
-          </div>
-          <div class="metric-box">
-            <div class="metric-value">${tech['布林位置'] ? tech['布林位置']+'%' : '--'}</div>
-            <div class="metric-label">当前位置</div>
-          </div>
-          <div class="metric-box ${tech['布林信号']?.includes('上轨') ? 'red' : tech['布林信号']?.includes('下轨') ? 'green' : ''}">
-            <div class="metric-value">${tech['布林信号'] || '--'}</div>
-            <div class="metric-label">信号</div>
-          </div>
-        </div>
-        <div id="bbChart" class="chart-sm"></div>
-      </div>
-      <div class="card">
-        <div class="card-title"><span class="dot" style="background:var(--blue)"></span>MACD</div>
-        <div class="metric-grid" style="margin-bottom:12px">
-          <div class="metric-box">
-            <div class="metric-value">${tech['MACD_DIF']?.toFixed(4) || '--'}</div>
-            <div class="metric-label">DIF</div>
-          </div>
-          <div class="metric-box">
-            <div class="metric-value">${tech['MACD_DEA']?.toFixed(4) || '--'}</div>
-            <div class="metric-label">DEA</div>
-          </div>
-          <div class="metric-box ${parseFloat(tech['MACD柱']||0) >= 0 ? 'green' : 'red'}">
-            <div class="metric-value">${tech['MACD柱']?.toFixed(4) || '--'}</div>
-            <div class="metric-label">MACD柱</div>
-          </div>
-          <div class="metric-box ${tech['MACD信号'] === '金叉-买方主导' ? 'green' : tech['MACD信号'] === '死叉-卖方主导' ? 'red' : ''}">
-            <div class="metric-value">${tech['MACD信号'] || '--'}</div>
-            <div class="metric-label">信号</div>
-          </div>
-        </div>
-        <div id="macdChart" class="chart-sm"></div>
-      </div>
-    </div>
+function show(...ids){ids.forEach(id=>{const el=document.getElementById(id);if(el)el.classList.add('vis')})}
+
+function renderAll(d){
+  const q=d['股票'];
+  // 头部
+  const pct=parseFloat(q['涨跌幅']||0), isUp=pct>=0;
+  document.getElementById('hNm').textContent=q['名称']||curName;
+  document.getElementById('hCd').textContent=curCode;
+  const prEl=document.getElementById('hPr');
+  prEl.textContent=q['最新价']?`¥${parseFloat(q['最新价']).toFixed(2)}`:'—';
+  prEl.className=`pr ${isUp?'up':'dn'}`;
+  document.getElementById('hCh').innerHTML=`${isUp?'▲':'▼'} ${Math.abs(pct).toFixed(2)}% ${isUp?'+':''}${(parseFloat(q['涨跌额'])||0).toFixed(2)}`;
+  document.getElementById('hCh').style.color=isUp?'var(--red)':'var(--green)';
+  const bd=document.getElementById('hBd');bd.textContent=isUp?'涨':'跌';bd.className=`bd ${isUp?'up':'dn'}`;
+  document.getElementById('hMeta').innerHTML=`
+    <span>今开 ${q['今开']||'—'}</span><span>最高 ${q['最高']||'—'}</span><span>最低 ${q['最低']||'—'}</span>
+    <span>昨收 ${q['昨收']||'—'}</span><span>成交 ${q['成交额亿']?q['成交额亿']+'亿':'—'}</span><span>市场 ${q['市场']||'—'}</span>
   `;
 
-  el.innerHTML = klineHtml + indicatorHtml;
+  // 五维评分
+  renderScore('sTech','sigTech',d['技术面']);
+  renderScore('sCap','sigCap',d['资金面']);
+  renderScore('sMsg','sigMsg',d['消息面']);
+  renderScore('sPol','sigPol',d['政策面']);
+  renderScore('sSent','sigSent',d['情绪面']);
 
-  // 渲染K线图
-  if (kline.length > 0) {
-    const categories = kline.map(k => k['date'].slice(5));
-    const kData = kline.map(k => [k['open'], k['close'], k['low'], k['high']]);
-    const volumes = kline.map(k => k['volume']);
-    const colors = kline.map(k => k['pct'] >= 0 ? '#ef4444' : '#22c55e');
+  // 雷达图
+  renderRadar(d);
 
-    klineChart = echarts.init(document.getElementById('klineChart'));
-    klineChart.setOption({
-      backgroundColor: 'transparent',
-      tooltip: { trigger: 'axis', axisPointer: { type: 'cross' } },
-      grid: [{ left: '8%', right: '2%', top: '10%', height: '55%' }, { left: '8%', right: '2%', top: '70%', height: '20%' }],
-      xAxis: [
-        { type: 'category', data: categories, gridIndex: 0, boundaryGap: false, axisLine: { lineStyle: { color: '#2a2e3f' } }, axisLabel: { color: '#8b8fa8', fontSize: 10 }, splitLine: { show: true, lineStyle: { color: '#1a1d27' } } },
-        { type: 'category', data: categories, gridIndex: 1, boundaryGap: false, axisLine: { lineStyle: { color: '#2a2e3f' } }, axisLabel: { color: '#8b8fa8', fontSize: 10 }, splitLine: { show: false } },
-      ],
-      yAxis: [
-        { scale: true, gridIndex: 0, axisLine: { lineStyle: { color: '#2a2e3f' } }, axisLabel: { color: '#8b8fa8', fontSize: 10 }, splitLine: { lineStyle: { color: '#1a1d27' } }, splitNumber: 4 },
-        { scale: true, gridIndex: 1, axisLine: { lineStyle: { color: '#2a2e3f' } }, axisLabel: { color: '#8b8fa8', fontSize: 10 }, splitLine: { show: false } },
-      ],
-      series: [
-        { name: 'K线', type: 'candlestick', data: kData, xAxisIndex: 0, yAxisIndex: 0, itemStyle: { color: '#ef4444', color0: '#22c55e', borderColor: '#ef4444', borderColor0: '#22c55e' } },
-        { name: '成交量', type: 'bar', data: volumes, xAxisIndex: 1, yAxisIndex: 1, itemStyle: { color: (p) => colors[p.dataIndex] }, barMaxWidth: 6 },
-      ]
-    });
+  // 核心矛盾
+  const c=d['综合'];
+  document.getElementById('bullPoints').innerHTML=c['多头观点'].map(p=>`<div class="vs-item">${p}</div>`).join('');
+  document.getElementById('bearPoints').innerHTML=c['空头观点'].map(p=>`<div class="vs-item">${p}</div>`).join('');
+  document.getElementById('contrText').textContent=c['核心矛盾'];
 
-    // 布林带图
-    if (tech['布林上轨'] && tech['K线历史']?.length > 20) {
-      const last20 = kline.slice(-60);
-      const bbMid = last20.map((k, i) => {
-        const slice = kline.slice(Math.max(0, kline.length - 60 + i - 19), Math.max(1, kline.length - 60 + i + 1));
-        if (slice.length < 20) return null;
-        const mean = slice.reduce((s, x) => s + x.close, 0) / slice.length;
-        const std = Math.sqrt(slice.reduce((s, x) => s + Math.pow(x.close - mean, 2), 0) / slice.length);
-        return { upper: mean + 2 * std, mid: mean, lower: mean - 2 * std, close: k.close };
-      }).filter(Boolean);
+  // 结论
+  const sh=c['短期'],mh=c['中期'];
+  document.getElementById('shortDir').textContent=sh['方向'];
+  document.getElementById('shortDir').style.color=dirColor(sh['方向']);
+  document.getElementById('shortTime').textContent=sh['时间'];
+  document.getElementById('shortLogic').textContent=sh['逻辑'];
+  document.getElementById('midDir').textContent=mh['方向'];
+  document.getElementById('midDir').style.color=dirColor(mh['方向']);
+  document.getElementById('midTime').textContent=mh['时间'];
+  document.getElementById('midLogic').textContent=mh['逻辑'];
 
-      if (bbMid.length > 0) {
-        const bbChart = echarts.init(document.getElementById('bbChart'));
-        bbChart.setOption({
-          backgroundColor: 'transparent',
-          tooltip: { trigger: 'axis' },
-          legend: { show: false },
-          grid: { left: '8%', right: '2%', top: '10%', bottom: '8%' },
-          xAxis: { type: 'category', data: bbMid.map((_, i) => i), axisLine: { lineStyle: { color: '#2a2e3f' } }, axisLabel: { color: '#8b8fa8', fontSize: 10 } },
-          yAxis: { scale: true, axisLine: { lineStyle: { color: '#2a2e3f' } }, axisLabel: { color: '#8b8fa8', fontSize: 10 }, splitLine: { lineStyle: { color: '#1a1d27' } } },
-          series: [
-            { name: '上轨', type: 'line', data: bbMid.map(b => b.upper), smooth: true, lineStyle: { color: '#a855f7', type: 'dashed', width: 1 }, symbol: 'none' },
-            { name: '中轨', type: 'line', data: bbMid.map(b => b.mid), smooth: true, lineStyle: { color: '#eab308', width: 1.5 }, symbol: 'none' },
-            { name: '下轨', type: 'line', data: bbMid.map(b => b.lower), smooth: true, lineStyle: { color: '#a855f7', type: 'dashed', width: 1 }, symbol: 'none' },
-            { name: '收盘价', type: 'line', data: bbMid.map(b => b.close), smooth: true, lineStyle: { color: '#e2e4ea', width: 1.5 }, symbol: 'none' },
-          ]
-        });
-      }
-    }
+  // 详细
+  renderDetails('detTech',d['技术面']['details']);
+  renderDetails('detCap',d['资金面']['details']);
+  renderDetails('detMsg',d['消息面']['details'],d['消息面']['新闻']);
+  renderDetails('detPol',d['政策面']['details']);
+  renderDetails('detSent',d['情绪面']['details']);
 
-    // MACD 图
-    if (tech['MACD_DIF'] && kline.length > 26) {
-      const macdData = kline.slice(-60).map((k, i, arr) => {
-        if (i < 33) return null;
-        const ema12 = (() => {
-          const slice = arr.slice(Math.max(0, i-11), i+1);
-          return slice.reduce((s, x) => s + x.close, 0) / slice.length;
-        })();
-        const ema26 = (() => {
-          const slice = arr.slice(Math.max(0, i-25), i+1);
-          return slice.reduce((s, x) => s + x.close, 0) / slice.length;
-        })();
-        const dif = ema12 - ema26;
-        return dif;
-      }).filter(Boolean);
-
-      if (macdData.length > 0) {
-        const macdChart = echarts.init(document.getElementById('macdChart'));
-        macdChart.setOption({
-          backgroundColor: 'transparent',
-          tooltip: { trigger: 'axis' },
-          grid: { left: '8%', right: '2%', top: '10%', bottom: '8%' },
-          xAxis: { type: 'category', data: macdData.map((_, i) => i), axisLine: { lineStyle: { color: '#2a2e3f' } }, axisLabel: { color: '#8b8fa8', fontSize: 10 } },
-          yAxis: { scale: true, axisLine: { lineStyle: { color: '#2a2e3f' } }, axisLabel: { color: '#8b8fa8', fontSize: 10 }, splitLine: { lineStyle: { color: '#1a1d27' } } },
-          series: [
-            { name: 'DIF', type: 'line', data: macdData, smooth: true, lineStyle: { color: '#3b82f6', width: 1.5 }, symbol: 'none' },
-            { type: 'line', data: macdData.map(v => v * 0.9), smooth: true, lineStyle: { color: '#f97316', width: 1 }, symbol: 'none', name: 'DEA' },
-          ]
-        });
-      }
-    }
-  }
+  // K线
+  if(d['K线历史']&&d['K线历史'].length>0) renderKline(d['K线历史']);
 }
 
-// ============================================================
-// 资金流向
-// ============================================================
-async function loadFunds() {
-  const el = document.getElementById('fundsContent');
-  el.innerHTML = '<div class="loading"><div class="spinner"></div>加载资金数据...</div>';
-
-  const fund = await fetch(`/api/fund_flow/${currentCode}`).then(r => r.json());
-  const quote = await fetch(`/api/quote/${currentCode}`).then(r => r.json());
-
-  let fundBars = '';
-  for (const [key, val] of Object.entries(fund)) {
-    const absVal = Math.abs(val);
-    const maxVal = Math.max(...Object.values(fund).map(Math.abs), 1);
-    const pct = (absVal / maxVal * 100).toFixed(1);
-    const isUp = val >= 0;
-    fundBars += `
-      <div class="fund-bar">
-        <div class="fund-label">
-          <span>${key}</span>
-          <span style="color:${isUp ? 'var(--green)' : 'var(--red)'}">${val >= 0 ? '+' : ''}${(val / 10000).toFixed(2)}万</span>
-        </div>
-        <div class="fund-track">
-          <div class="fund-fill ${isUp ? 'up' : 'down'}" style="width:${pct}%"></div>
-        </div>
-      </div>
-    `;
-  }
-
-  const totalMain = fund['主力净流入-净额'] || 0;
-  const totalMainUp = totalMain >= 0;
-
-  el.innerHTML = `
-    <div class="grid-2">
-      <div class="card">
-        <div class="card-title"><span class="dot" style="background:var(--blue)"></span>资金流向明细</div>
-        ${fundBars || '<div style="color:var(--text-dim);padding:20px">暂无数据</div>'}
-      </div>
-      <div class="card">
-        <div class="card-title"><span class="dot" style="background:${totalMainUp ? 'var(--green)' : 'var(--red)'}"></span>主力资金综合判断</div>
-        <div class="ai-summary" style="margin:0">
-          <div class="ai-summary-title">${totalMainUp ? '📈 主力净流入' : '📉 主力净流出'}</div>
-          <div style="font-size:28px;font-weight:700;color:${totalMainUp ? 'var(--green)' : 'var(--red)'};margin:8px 0">
-            ${(totalMain / 10000).toFixed(2)}万
-          </div>
-          ${generateFundAnalysis(fund, quote)}
-        </div>
-      </div>
-    </div>
-  `;
+function renderScore(scoreId,sigId,dim){
+  const s=dim['score'],sig=dim['signal'];
+  document.getElementById(scoreId).textContent=s;
+  document.getElementById(scoreId).style.color=s>=60?'var(--green)':s<=40?'var(--red)':'var(--yellow)';
+  const sigEl=document.getElementById(sigId);
+  sigEl.textContent=sig;
+  sigEl.className=`dsig ${sig==='偏多'?'bull':sig==='偏空'?'bear':'neut'}`;
 }
 
-// ============================================================
-// 热门板块
-// ============================================================
-async function loadSectors() {
-  try {
-    const res = await fetch('/api/sectors');
-    const sectors = await res.json();
-    if (!sectors.length) return;
-    document.getElementById('industryList').innerHTML = sectors.map(s => `
-      <div class="sector-item">
-        <div>
-          <div class="sector-name">${s['板块']}</div>
-          <div class="sector-lead">领涨: ${s['领涨']}</div>
-        </div>
-        <div class="sector-pct ${parseFloat(s['涨跌幅']) >= 0 ? 'up' : 'down'}">
-          ${parseFloat(s['涨跌幅']) >= 0 ? '+' : ''}${parseFloat(s['涨跌幅'] || 0).toFixed(2)}%
-        </div>
-      </div>
-    `).join('');
-  } catch(e) {
-    document.getElementById('industryList').innerHTML = '<div style="color:var(--text-dim);padding:20px">加载失败</div>';
-  }
+function dirColor(dir){return dir==='偏多'?'var(--green)':dir==='偏空'?'var(--red)':'var(--yellow)'}
+
+function renderRadar(d){
+  const el=document.getElementById('radarChart');
+  if(radarChart)radarChart.dispose();
+  radarChart=echarts.init(el);
+  radarChart.setOption({
+    backgroundColor:'transparent',
+    radar:{indicator:[
+      {name:'技术面',max:100},{name:'资金面',max:100},{name:'消息面',max:100},{name:'政策面',max:100},{name:'情绪面',max:100}
+    ],radius:'65%',axisName:{color:'#6b7194',fontSize:11},splitArea:{areaStyle:{color:['rgba(59,130,246,0.02)','rgba(59,130,246,0.05)']}},splitLine:{lineStyle:{color:'#252a3a'}},axisLine:{lineStyle:{color:'#252a3a'}}},
+    series:[{type:'radar',data:[{value:[d['技术面']['score'],d['资金面']['score'],d['消息面']['score'],d['政策面']['score'],d['情绪面']['score']],
+      areaStyle:{color:'rgba(59,130,246,0.2)'},lineStyle:{color:'#3b82f6',width:2},itemStyle:{color:'#3b82f6'},symbol:'circle',symbolSize:6}]}]
+  });
 }
 
-// ============================================================
-// AI 总结生成
-// ============================================================
-function generateAISummary(quote, tech) {
-  const pct = parseFloat(quote['涨跌幅'] || 0);
-  const maSignal = tech['均线排列'] || '';
-  const macdSignal = tech['MACD信号'] || '';
-  const rsiSignal = tech['RSI信号'] || '';
-  const bbSignal = tech['布林信号'] || '';
-  const vol5d = parseFloat(tech['5日涨幅'] || 0);
-  const vol10d = parseFloat(tech['10日涨幅'] || 0);
-
-  let verdict = 'neutral';
-  let points = [];
-
-  // 多头逻辑
-  if (maSignal === '多头排列') {
-    points.push({ text: '均线多头排列，短期趋势向上', type: 'bull' });
-    verdict = 'bull';
+function renderDetails(containerId,details,news){
+  const el=document.getElementById(containerId);
+  let html=details.map(d=>{
+    const cls=d['type']==='bull'?'bull':d['type']==='bear'?'bear':d['type']==='info'?'info':'neutral';
+    const label=d['type']==='bull'?'多':d['type']==='bear'?'空':d['type']==='info'?'注':'中';
+    return `<div class="detail-row"><span class="tag ${cls}">${label}</span><span>${d['item']}</span></div>`;
+  }).join('');
+  if(news&&news.length>0){
+    html+=`<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border)"><div style="font-size:12px;font-weight:700;color:var(--dim);margin-bottom:8px">📎 相关新闻</div>`;
+    html+=news.map(n=>`<div class="news-item"><div class="nt">${n['标题']}</div><div class="nm">${n['来源']||''} ${n['时间']||''}</div></div>`).join('');
+    html+='</div>';
   }
-  if (maSignal === '空头排列') {
-    points.push({ text: '均线空头排列，短期趋势向下', type: 'bear' });
-    verdict = 'bear';
-  }
-  if (macdSignal === '金叉-买方主导') {
-    points.push({ text: 'MACD 金叉，短线动能转多', type: 'bull' });
-    if (verdict !== 'bear') verdict = 'bull';
-  }
-  if (macdSignal === '死叉-卖方主导') {
-    points.push({ text: 'MACD 死叉，短线动能偏空', type: 'bear' });
-    if (verdict !== 'bull') verdict = 'bear';
-  }
-  if (rsiSignal === '超卖') {
-    points.push({ text: 'RSI 处于超卖区，关注反弹机会', type: 'bull' });
-  }
-  if (rsiSignal === '超买') {
-    points.push({ text: 'RSI 进入超买区，警惕回调风险', type: 'bear' });
-  }
-  if (bbSignal?.includes('下轨')) {
-    points.push({ text: '股价触及布林下轨，关注支撑', type: 'info' });
-  }
-  if (bbSignal?.includes('上轨')) {
-    points.push({ text: '股价突破布林上轨，强势特征', type: 'info' });
-  }
-  if (Math.abs(vol5d) > 5) {
-    points.push({ text: `近5日涨幅 ${vol5d > 0 ? '+' : ''}${vol5d}%，${vol5d > 0 ? '动能较强' : '回调明显'}`, type: vol5d > 0 ? 'bull' : 'bear' });
-  }
-
-  if (!points.length) {
-    points.push({ text: '当前无明确方向信号，建议观望等待', type: 'neutral' });
-  }
-
-  // 综合结论
-  let conclusion = '';
-  if (verdict === 'bull') {
-    conclusion = '综合信号偏多，短期值得关注回调买入机会';
-  } else if (verdict === 'bear') {
-    conclusion = '综合信号偏空，短期注意止损风险，谨慎追涨';
-  } else {
-    conclusion = '多空信号交织，当前无右侧明确方向，维持观望';
-  }
-
-  const tags = points.map(p => `<span class="ai-tag ${p.type}">${p.text}</span>`).join('');
-
-  return `
-    <div style="margin-bottom:10px">${tags}</div>
-    <div style="border-top:1px solid var(--border);padding-top:10px;margin-top:6px">
-      <strong style="font-size:13px">综合结论：</strong>
-      <span style="color:${verdict === 'bull' ? 'var(--green)' : verdict === 'bear' ? 'var(--red)' : 'var(--yellow)'}">${conclusion}</span>
-    </div>
-  `;
+  el.innerHTML=html||'<div style="color:var(--dim);padding:12px">暂无分析数据</div>';
 }
 
-function generateFundAnalysis(fund, quote) {
-  const main = fund['主力净流入-净额'] || 0;
-  const superLarge = fund['超大单净流入-净额'] || 0;
-  const large = fund['大单净流入-净额'] || 0;
-  const small = fund['小单净流入-净额'] || 0;
-  const pct = parseFloat(quote['涨跌幅'] || 0);
-
-  let analysis = [];
-
-  if (superLarge < 0 && main > 0) {
-    analysis.push('超大单流出但大单流入，主力对倒可能性大，谨慎看待');
-  }
-  if (superLarge > 0 && large < 0) {
-    analysis.push('超大单护盘但大单出货，机构托底但中小资金偏谨慎');
-  }
-  if (small < 0 && main > 0) {
-    analysis.push('小单净流出 + 主力净流入，散户离场、机构接筹，潜在利好');
-  }
-  if (small > 0 && main < 0) {
-    analysis.push('小单净流入 + 主力净流出，散户接盘、机构出货，警惕信号');
-  }
-  if (pct > 3 && main < 0) {
-    analysis.push('⚠️ 涨幅较大但主力持续流出，警惕诱多风险');
-  }
-  if (pct < -3 && main > 0) {
-    analysis.push('⚠️ 跌幅较大但主力逆势买入，关注是否出现护盘行为');
-  }
-
-  if (!analysis.length) {
-    analysis.push('资金暂无明显异常信号');
-  }
-
-  return analysis.map(a => `<div style="font-size:13px;margin-top:8px;padding-left:12px;border-left:2px solid var(--blue)">${a}</div>`).join('');
+function renderKline(kline){
+  const el=document.getElementById('klineChart');
+  if(kChart)kChart.dispose();
+  kChart=echarts.init(el);
+  const dates=kline.map(k=>k['date'].slice(5));
+  const ohlc=kline.map(k=>[k['open'],k['close'],k['low'],k['high']]);
+  const vols=kline.map(k=>k['volume']);
+  const colors=kline.map(k=>k['pct']>=0?'#ef4444':'#22c55e');
+  kChart.setOption({
+    backgroundColor:'transparent',
+    tooltip:{trigger:'axis',axisPointer:{type:'cross'}},
+    grid:[{left:'8%',right:'3%',top:'8%',height:'55%'},{left:'8%',right:'3%',top:'68%',height:'18%'}],
+    xAxis:[{type:'category',data:dates,gridIndex:0,axisLine:{lineStyle:{color:'#252a3a'}},axisLabel:{color:'#6b7194',fontSize:9},splitLine:{show:true,lineStyle:{color:'#12151f'}},boundaryGap:true},
+           {type:'category',data:dates,gridIndex:1,axisLine:{lineStyle:{color:'#252a3a'}},axisLabel:{color:'#6b7194',fontSize:9},boundaryGap:true}],
+    yAxis:[{scale:true,gridIndex:0,axisLine:{lineStyle:{color:'#252a3a'}},axisLabel:{color:'#6b7194',fontSize:9},splitLine:{lineStyle:{color:'#12151f'}},splitNumber:4},
+           {scale:true,gridIndex:1,axisLine:{lineStyle:{color:'#252a3a'}},axisLabel:{color:'#6b7194',fontSize:9},splitLine:{show:false}}],
+    series:[
+      {name:'K线',type:'candlestick',data:ohlc,xAxisIndex:0,yAxisIndex:0,itemStyle:{color:'#ef4444',color0:'#22c55e',borderColor:'#ef4444',borderColor0:'#22c55e'}},
+      {name:'量',type:'bar',data:vols,xAxisIndex:1,yAxisIndex:1,itemStyle:{color:p=>colors[p.dataIndex]},barMaxWidth:5}
+    ]
+  });
 }
 
-// ============================================================
-// 初始化
-// ============================================================
-loadSectors();
+// ── 标签切换 ──
+function showDetail(name){
+  document.querySelectorAll('.dtab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.dpanel').forEach(p=>p.classList.remove('active'));
+  const tabMap={tech:'📐 技术面',capital:'💰 资金面',msg:'📰 消息面',policy:'🏛️ 政策面',sent:'🧠 情绪面',kline:'📉 K线图'};
+  document.querySelectorAll('.dtab').forEach(t=>{if(t.textContent===tabMap[name])t.classList.add('active')});
+  const panel=document.getElementById(`dp-${name}`);
+  if(panel)panel.classList.add('active');
+  if(name==='kline'&&kChart)setTimeout(()=>kChart.resize(),50);
+}
 
-// 响应式 resize
-window.addEventListener('resize', () => {
-  if (klineChart) klineChart.resize();
-});
+window.addEventListener('resize',()=>{if(radarChart)radarChart.resize();if(kChart)kChart.resize()});
 </script>
 </body>
 </html>
